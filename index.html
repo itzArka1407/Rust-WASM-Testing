@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Rust Wasm Demo</title>
+</head>
+<body>
+    <button id="run-btn">Press to run</button>
+
+    <script type="module">
+        // 1. Updated import to match your actual build output file name
+        import init, { greet } from './pkg/wasm_bitcode_demo.js';
+
+        async function run() {
+            // 2. Initialize the Wasm linear memory/binary
+            await init();
+
+            // 3. Fire the exported Rust function
+            greet("Developer");
+        }
+
+        // 4. Bind the event listener inside the module scope
+        document.getElementById('run-btn').addEventListener('click', run);
+    </script>
+</body>
+</html>
