@@ -12,11 +12,16 @@ extern "C" {
     // By default for a fn with fn_name as name, if no namespace/name is provided, the fn becomes window.<fn_name>
 
     // Native window.alert function in JS
-    #[wasm_bindgen(js_namespace = window, js_name = alert)]
+    #[wasm_bindgen(js_name = alert)]
     fn window_alert(s: &str);
 
+    // window.console.log
     #[wasm_bindgen(js_namespace = console, js_name = log)]
     fn console_log(s: &str); // console.log in js
+
+    // window.performance.now function -- for time measuremenets
+    #[wasm_bindgen(js_namespace = performance)]
+    fn now() -> f64;
 }
 
 // Accept a js object(the JsValue)

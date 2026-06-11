@@ -7,42 +7,85 @@
 </head>
 
 <body>
-    <button id="obj-btn">Press to send obj</button>
-    <button id="sum-btn">Press to get sum</button>
-    <button id="connections-slow-btn">Press to set up connection slowly</button>
-    <button id="connections-fast-btn">Press to set up connection fast</button>
+    <div id="app-view"></div>
 
     <script type="module">
-        // 1. Updated import to match your actual build output file name
-        import init, {accept_js_obj, calc_sum, config_engine_slowly, config_engine_fast} from './pkg/wasm_bitcode_demo.js';
-        await init();
+        // 1. Import the default initializer along with your struct
+        import init, {DataPipeline} from "../pkg/wasm_bitcode_demo.js";
+        import wasmActions from "./src_frontend/simple_wasm_functions.js";
 
-        function send_obj() {
-            const obj = {name: "Test", id: 62};
-            accept_js_obj(obj);
+        const appView = document.getElementById('app-view');
+
+        // Keep a clear, localized reference to the compiled wasm module instance
+        let wasmInstance = null;
+
+        // --- ROUTING FUNCTIONS ---
+
+        async function loadHomePage() {
+            const res = await fetch("./src_frontend/home_page_buttons.html");
+            appView.innerHTML = await res.text();
+
+            // Bind Home Page Events immediately after they are injected
+            document.getElementById('obj-btn').addEventListener('click', wasmActions.send_obj);
+            document.getElementById('sum-btn').addEventListener('click', wasmActions.get_sum_of_arr);
+            document.getElementById('connections-slow-btn').addEventListener('click', wasmActions.evaluate_connection_slow);
+            document.getElementById('connections-fast-btn').addEventListener('click', wasmActions.evaluate_connection_fast);
+            document.getElementById('single-conv-connections-btn').addEventListener('click', wasmActions.evaluate_single_conv);
+
+            // Handle page routing
+            document.getElementById('data-pipeline-page-btn').addEventListener('click', loadDataPipelinePage);
         }
 
-        function get_sum_of_arr() {
-            const test_arr = new Uint8Array([10, 20, 30, 40, 50]);
-            let sum = calc_sum(test_arr);
-            console.log("Sum of array: ", sum);
+        async function loadDataPipelinePage() {
+            const res = await fetch("./src_frontend/data_pipeline.html");
+            appView.innerHTML = await res.text();
+
+            // Bind Data Pipeline Events immediately after they are injected
+            document.getElementById('pipeline-sending-button').addEventListener('click', sendData);
+            document.getElementById('home-page-btn').addEventListener('click', loadHomePage);
         }
 
-        function evaluate_connection_slow() {
-            const userConfig = {username: "Jack", connections: 10, use_tls: false};
-            config_engine_slowly(userConfig);
+        // --- DATA PROCESSING LOGIC ---
+
+        function sendData() {
+            // Guard clause: Make sure Wasm is actually ready before allocating
+            if (!wasmInstance) {
+                console.error("Wasm instance is not initialized yet.");
+                return;
+            }
+
+            let reserved_size = 1024 * 1024; // 1MB arena allocation block
+            const pipeLine = new DataPipeline(reserved_size);
+            const ptr = pipeLine.get_data_ptr();
+
+            const testPacket = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+            const packetLen = testPacket.length;
+
+            // Use the verified wasmInstance memory buffer safely
+            const wasmMemoryView = new Uint8Array(wasmInstance.memory.buffer, ptr, packetLen);
+            wasmMemoryView.set(testPacket);
+
+            pipeLine.process(packetLen);
+            console.log("WASM Data pipeline processed packet successfully!");
+
+            // Clean up the pipeline instance handle when done to avoid memory leaks
+            pipeLine.free();
         }
 
-        function evaluate_connection_fast() {
-            const userConfig = {username: "JackTheReaper", connections: 100};
-            config_engine_fast(userConfig);
+        // Global Bootstrapper: Initialize Wasm once, then reveal the application
+        async function boot() {
+            try {
+                // Initialize and capture the exports object (holds the raw memory buffer)
+                wasmInstance = await init();
+
+                // Now that memory is bound safely, load the home page views
+                await loadHomePage();
+            } catch (err) {
+                console.error("Failed to initialize WebAssembly engine:", err);
+            }
         }
 
-        // 4. Bind the event listener inside the module scope
-        document.getElementById('obj-btn').addEventListener('click', send_obj);
-        document.getElementById('sum-btn').addEventListener('click', get_sum_of_arr);
-        document.getElementById('connections-slow-btn').addEventListener('click', evaluate_connection_slow);
-        document.getElementById('connections-fast-btn').addEventListener('click', evaluate_connection_fast);
+        boot();
     </script>
 </body>
 
