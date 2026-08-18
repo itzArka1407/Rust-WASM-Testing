@@ -11,8 +11,10 @@ crate-type = ["cdylib"]
 
 [dependencies]
 bitcode = { version = "0.6.9", features = ["serde", "uuid"] }
+gloo-net = "0.7.0"
 js-sys = "0.3.100"
 serde = { version = "1.0.228", features = ["derive"] }
 serde-wasm-bindgen = "0.6.5"
 uuid = { version = "1.23.3", features = ["serde", "v4", "v7", "js"] }
 wasm-bindgen = "0.2.121"
+wasm-bindgen-futures = "0.4.77"

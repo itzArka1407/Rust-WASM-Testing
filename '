@@ -1,0 +1,33 @@
+use bitcode::{Buffer, Encode};
+use std::{cell::UnsafeCell, sync::OnceLock};
+use wasm_bindgen::{JsValue, prelude::wasm_bindgen};
+
+#[wasm_bindgen]
+pub struct Client {
+    server_resp: Vec<u8>, // The server response(bytes)
+}
+
+#[wasm_bindgen]
+#[derive(Copy)]
+pub enum FetchMethod {
+    Post,
+    Get,
+    Delete,
+}
+
+#[wasm_bindgen]
+pub struct FetchOptions {
+    pub method: FetchMethod,
+}
+
+impl Client {
+    #[wasm_bindgen(constructor)]
+    pub fn new(expected_max_msg_size: usize) -> Self {
+        Self {
+            server_resp: Vec::with_capacity(expected_max_msg_size),
+        }
+    }
+
+    // Fetch something from the server
+    pub fn fetch(endpoint: &str) -> Result<JsValue, String> {}
+}
